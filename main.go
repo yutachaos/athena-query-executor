@@ -9,6 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/athena"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	"k8s.io/utils/pointer"
 	"log"
 	"net/url"
 	"os"
@@ -18,6 +19,7 @@ import (
 
 var athenaClient *athena.Athena
 var s3Downloader *s3manager.Downloader
+var saveBucket *string
 
 const fileNameDateFormat = "20060102150405"
 
@@ -33,25 +35,27 @@ func init() {
 	}
 	sess := session.New(&conf)
 	athenaClient = athena.New(sess)
-
 	s3Downloader = s3manager.NewDownloader(sess)
 }
 
 func main() {
 
 	query := flag.String("query", "", "please specify -query flag")
-	saveBucket := *flag.String("save-bucket", "", "please specify -save-bucket flag")
-
+	saveBucket := flag.String("save-bucket", "", "please specify -save-bucket flag")
 	flag.Parse()
-
-	saveBucket = os.Getenv("AWS_S3_BUCKET_FOR_ATHENA_RESULT")
-
 	resultConf := &athena.ResultConfiguration{}
-	if saveBucket == "" {
-		panic("Please set AWS_S3_BUCKET_FOR_ATHENA_RESULT")
+
+	if *saveBucket == "" {
+		if os.Getenv("AWS_S3_BUCKET_FOR_ATHENA_RESULT") == "" {
+			log.Fatal("Please specify S3 bucket for saving Athena query results.")
+		}
+		saveBucket = pointer.StringPtr(os.Getenv("AWS_S3_BUCKET_FOR_ATHENA_RESULT"))
 	}
 
-	resultConf.SetOutputLocation("s3://" + saveBucket + "/")
+	log.Printf("query: %s", *query)
+	log.Printf("saveBucket: %s", *saveBucket)
+
+	resultConf.SetOutputLocation("s3://" + *saveBucket + "/")
 
 	input := &athena.StartQueryExecutionInput{
 		QueryString:         query,
