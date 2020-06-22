@@ -10,14 +10,16 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"log"
+	"net/url"
 	"os"
+	"path/filepath"
 	"time"
 )
 
 var athenaClient *athena.Athena
 var s3Downloader *s3manager.Downloader
 
-const csvFileNameDateFormat = "20060102150405"
+const fileNameDateFormat = "20060102150405"
 
 func init() {
 	cred := credentials.NewStaticCredentials(
@@ -37,12 +39,12 @@ func init() {
 
 func main() {
 
-	saveBucket := os.Getenv("AWS_S3_BUCKET_FOR_ATHENA_RESULT")
-
 	query := flag.String("query", "", "please specify -query flag")
-	saveBucket = *flag.String("SaveBucket", "", "please specify -save-bucket flag")
+	saveBucket := *flag.String("save-bucket", "", "please specify -save-bucket flag")
 
 	flag.Parse()
+
+	saveBucket = os.Getenv("AWS_S3_BUCKET_FOR_ATHENA_RESULT")
 
 	resultConf := &athena.ResultConfiguration{}
 	if saveBucket == "" {
@@ -64,16 +66,21 @@ func main() {
 	}
 	log.Printf("Query Succeed. S3Output path: %s", *executionResult.QueryExecution.ResultConfiguration.OutputLocation)
 
-	objectKey := *executionResult.QueryExecution.QueryExecutionId + ".csv"
+	u, err := url.Parse(*executionResult.QueryExecution.ResultConfiguration.OutputLocation)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	f, err := os.Create(fmt.Sprintf("%s.csv", time.Now().Format(csvFileNameDateFormat)))
+	log.Printf("proto: %q, bucket: %q, key: %q", u.Scheme, u.Host, u.Path)
+
+	f, err := os.Create(fmt.Sprintf("%s%s", time.Now().Format(fileNameDateFormat), filepath.Ext(u.Path)))
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	n, err := s3Downloader.Download(f, &s3.GetObjectInput{
-		Bucket: aws.String(saveBucket),
-		Key:    aws.String(objectKey),
+		Bucket: aws.String(u.Host),
+		Key:    aws.String(u.Path),
 	})
 
 	if err != nil {
