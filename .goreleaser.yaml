@@ -1,0 +1,32 @@
+builds:
+  - main: ./main.go
+    binary: athena-query-executor
+    goos:
+      - windows
+      - darwin
+      - linux
+    goarch:
+      - amd64
+    env:
+      - CGO_ENABLED=0
+      - GO111MODULE=on
+  ldflags:
+    - -s -w
+    - "-X main.version={{.Version}}"
+    - "-X main.commit={{.Commit}}"
+checksum:
+  name_template: '{{ .ProjectName }}_{{ .Version }}_checksums.txt'
+archives:
+  - format: zip
+snapshot:
+  name_template: master
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "Merge pull request"
+      - "Merge branch"
+release:
+  github:
+    owner: yutachaos
+    name: athena-query-executor

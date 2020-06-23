@@ -17,9 +17,14 @@ import (
 	"time"
 )
 
-var athenaClient *athena.Athena
-var s3Downloader *s3manager.Downloader
-var saveBucket *string
+var (
+	name         = "athena-query-executor"
+	version      = "dev"
+	commit       string
+	athenaClient *athena.Athena
+	s3Downloader *s3manager.Downloader
+	saveBucket   *string
+)
 
 const fileNameDateFormat = "20060102150405"
 
@@ -40,9 +45,17 @@ func init() {
 
 func main() {
 
+	showVersion := false
 	query := flag.String("query", "", "please specify -query flag")
 	saveBucket := flag.String("save-bucket", "", "please specify -save-bucket flag")
+
+	flag.BoolVar(&showVersion, "version", false, "show application version")
+
 	flag.Parse()
+	if showVersion {
+		fmt.Fprintf(os.Stderr, "%s version:%s (rev:%s)\n", name, version, commit)
+		os.Exit(0)
+	}
 	resultConf := &athena.ResultConfiguration{}
 
 	if *saveBucket == "" {
@@ -111,9 +124,8 @@ func getQueryExecutionResultID(input *athena.StartQueryExecutionInput) (executio
 		if err != nil {
 			return nil, err
 		}
-		// executionOutput.QueryExecution.Status.Stateは*string
 		switch *executionOutput.QueryExecution.Status.State {
-		// https://docs.aws.amazon.com/sdk-for-go/api/service/athena/#pkg-consts
+		// @see https://docs.aws.amazon.com/sdk-for-go/api/service/athena/#pkg-consts
 		case athena.QueryExecutionStateQueued, athena.QueryExecutionStateRunning:
 			time.Sleep(5 * time.Second)
 		case athena.QueryExecutionStateSucceeded:
