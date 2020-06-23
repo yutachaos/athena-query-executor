@@ -1,15 +1,20 @@
+release:
+  github:
+    owner: yutachaos
+    name: athena-query-executor
+  name_template: '{{.Tag}}'
 builds:
-  - main: ./main.go
-    binary: athena-query-executor
-    goos:
-      - windows
-      - darwin
-      - linux
-    goarch:
-      - amd64
-    env:
-      - CGO_ENABLED=0
-      - GO111MODULE=on
+- main: .
+  binary: athena-query-executor
+  goos:
+    - windows
+    - darwin
+    - linux
+  goarch:
+    - amd64
+  env:
+    - CGO_ENABLED=0
+    - GO111MODULE=on
   ldflags:
     - -s -w
     - "-X main.version={{.Version}}"
@@ -26,7 +31,3 @@ changelog:
     exclude:
       - "Merge pull request"
       - "Merge branch"
-release:
-  github:
-    owner: yutachaos
-    name: athena-query-executor
