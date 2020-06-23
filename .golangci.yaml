@@ -6,3 +6,5 @@ linters:
     - gochecknoglobals
     - goerr113
     - maligned
+    - gochecknoinits
+    - funlen

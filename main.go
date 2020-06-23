@@ -3,6 +3,12 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
+	"net/url"
+	"os"
+	"path/filepath"
+	"time"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -10,11 +16,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"k8s.io/utils/pointer"
-	"log"
-	"net/url"
-	"os"
-	"path/filepath"
-	"time"
 )
 
 var (
@@ -23,10 +24,12 @@ var (
 	commit       string
 	athenaClient *athena.Athena
 	s3Downloader *s3manager.Downloader
-	saveBucket   *string
 )
 
-const fileNameDateFormat = "20060102150405"
+const (
+	waitDuration       = 5 * time.Second
+	fileNameDateFormat = "20060102150405"
+)
 
 func init() {
 	cred := credentials.NewStaticCredentials(
@@ -38,30 +41,36 @@ func init() {
 		Region:      aws.String(os.Getenv("AWS_DEFAULT_REGION")),
 		Credentials: cred,
 	}
-	sess := session.New(&conf)
+	sess, err := session.NewSession(&conf)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	athenaClient = athena.New(sess)
 	s3Downloader = s3manager.NewDownloader(sess)
 }
 
 func main() {
-
 	showVersion := false
 	query := flag.String("query", "", "please specify -query flag")
 	saveBucket := flag.String("save-bucket", "", "please specify -save-bucket flag")
 
 	flag.BoolVar(&showVersion, "version", false, "show application version")
-
 	flag.Parse()
+
 	if showVersion {
-		fmt.Fprintf(os.Stderr, "%s version:%s (rev:%s)\n", name, version, commit)
+		fmt.Printf("%s version:%s (rev:%s)\n", name, version, commit)
 		os.Exit(0)
 	}
+
 	resultConf := &athena.ResultConfiguration{}
 
 	if *saveBucket == "" {
 		if os.Getenv("AWS_S3_BUCKET_FOR_ATHENA_RESULT") == "" {
 			log.Fatal("Please specify S3 bucket for saving Athena query results.")
 		}
+
 		saveBucket = pointer.StringPtr(os.Getenv("AWS_S3_BUCKET_FOR_ATHENA_RESULT"))
 	}
 
@@ -78,12 +87,15 @@ func main() {
 	log.Printf("Execute query: %s", *query)
 
 	executionResult, err := getQueryExecutionResultID(input)
+
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	log.Printf("Query Succeed. S3Output path: %s", *executionResult.QueryExecution.ResultConfiguration.OutputLocation)
 
 	u, err := url.Parse(*executionResult.QueryExecution.ResultConfiguration.OutputLocation)
+
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -107,9 +119,11 @@ func main() {
 	log.Printf("FileName: %s Size: %d byte", f.Name(), n)
 }
 
-func getQueryExecutionResultID(input *athena.StartQueryExecutionInput) (executionOutput *athena.GetQueryExecutionOutput, err error) {
-
+func getQueryExecutionResultID(
+	input *athena.StartQueryExecutionInput) (
+	executionOutput *athena.GetQueryExecutionOutput, err error) {
 	output, err := athenaClient.StartQueryExecution(input)
+
 	if err != nil {
 		return nil, err
 	}
@@ -124,10 +138,11 @@ func getQueryExecutionResultID(input *athena.StartQueryExecutionInput) (executio
 		if err != nil {
 			return nil, err
 		}
-		switch *executionOutput.QueryExecution.Status.State {
 		// @see https://docs.aws.amazon.com/sdk-for-go/api/service/athena/#pkg-consts
+
+		switch *executionOutput.QueryExecution.Status.State {
 		case athena.QueryExecutionStateQueued, athena.QueryExecutionStateRunning:
-			time.Sleep(5 * time.Second)
+			time.Sleep(waitDuration)
 		case athena.QueryExecutionStateSucceeded:
 			return executionOutput, nil
 		default: // athena.QueryExecutionStateFailed, athena.QueryExecutionStateCancelled
