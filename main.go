@@ -20,7 +20,7 @@ import (
 
 var (
 	name         = "athena-query-executor"
-	version      = "dev"
+	version      = "master"
 	commit       string
 	athenaClient *athena.Athena
 	s3Downloader *s3manager.Downloader
