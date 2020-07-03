@@ -9,17 +9,17 @@
 AWS_ACCESS_KEY_ID=xxxx
 AWS_SECRET_ACCESS_KEY=xxxx
 AWS_DEFAULT_REGION=xxx
-// Specify with S3 path to save the execution result of Athena, instead of -save-bucket flag
-AWS_S3_BUCKET_FOR_ATHENA_RESULT=S3Path
+// Specify with S3 path to save the execution result of Athena, instead of -result-save-bucket flag
+ATHENA_RESULT_BUCKET=S3Path
 ```
 
 ## Usage
 - query
      - The query to execute
-- save-bucket
+- result-save-bucket
      - Bucket where the query execution result is saved
 
 ### go run
-- go run main.go -query "SHOW DATABASES" -save-bucket hoge-bucket
+- go run main.go -query "SHOW DATABASES" -result-save-bucket hoge-bucket
 
 

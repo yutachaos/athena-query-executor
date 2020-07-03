@@ -35,7 +35,7 @@ func init() {
 	cred := credentials.NewStaticCredentials(
 		os.Getenv("AWS_ACCESS_KEY_ID"),
 		os.Getenv("AWS_SECRET_ACCESS_KEY"),
-		"",
+		os.Getenv("AWS_SESSION_TOKEN"),
 	)
 	conf := aws.Config{
 		Region:      aws.String(os.Getenv("AWS_DEFAULT_REGION")),
@@ -54,7 +54,7 @@ func init() {
 func main() {
 	showVersion := false
 	query := flag.String("query", "", "please specify -query flag")
-	saveBucket := flag.String("save-bucket", "", "please specify -save-bucket flag")
+	saveBucket := flag.String("result-save-bucket", "", "please specify -result-save-bucket flag")
 
 	flag.BoolVar(&showVersion, "version", false, "show application version")
 	flag.Parse()
@@ -67,11 +67,11 @@ func main() {
 	resultConf := &athena.ResultConfiguration{}
 
 	if *saveBucket == "" {
-		if os.Getenv("AWS_S3_BUCKET_FOR_ATHENA_RESULT") == "" {
+		if os.Getenv("ATHENA_RESULT_BUCKET") == "" {
 			log.Fatal("Please specify S3 bucket for saving Athena query results.")
 		}
 
-		saveBucket = pointer.StringPtr(os.Getenv("AWS_S3_BUCKET_FOR_ATHENA_RESULT"))
+		saveBucket = pointer.StringPtr(os.Getenv("ATHENA_RESULT_BUCKET"))
 	}
 
 	log.Printf("query: %s", *query)
