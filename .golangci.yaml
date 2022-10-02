@@ -8,3 +8,20 @@ linters:
     - maligned
     - gochecknoinits
     - funlen
+    - exhaustivestruct
+    - wrapcheck
+    - testpackage
+    - lll
+    - errorlint
+    - gosimple
+    - gci
+    - golint
+    - exhaustruct
+    - nonamedreturns
+    - staticcheck
+    - varnamelen
+    - forbidigo
+    - ifshort
+    - ireturn
+    - revive
+    - wsl

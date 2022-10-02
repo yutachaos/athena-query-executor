@@ -42,7 +42,6 @@ func init() {
 		Credentials: cred,
 	}
 	sess, err := session.NewSession(&conf)
-
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -87,7 +86,6 @@ func main() {
 	log.Printf("Execute query: %s", *query)
 
 	executionResult, err := getQueryExecutionResultID(input)
-
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -95,7 +93,6 @@ func main() {
 	log.Printf("Query Succeed. S3Output path: %s", *executionResult.QueryExecution.ResultConfiguration.OutputLocation)
 
 	u, err := url.Parse(*executionResult.QueryExecution.ResultConfiguration.OutputLocation)
-
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -111,7 +108,6 @@ func main() {
 		Bucket: aws.String(u.Host),
 		Key:    aws.String(u.Path),
 	})
-
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -121,9 +117,9 @@ func main() {
 
 func getQueryExecutionResultID(
 	input *athena.StartQueryExecutionInput) (
-	executionOutput *athena.GetQueryExecutionOutput, err error) {
+	executionOutput *athena.GetQueryExecutionOutput, err error,
+) {
 	output, err := athenaClient.StartQueryExecution(input)
-
 	if err != nil {
 		return nil, err
 	}

@@ -3,28 +3,51 @@ release:
     owner: yutachaos
     name: athena-query-executor
   name_template: '{{.Tag}}'
+
 builds:
-- main: .
-  binary: athena-query-executor
-  goos:
-    - windows
-    - darwin
-    - linux
-  goarch:
-    - amd64
-  env:
-    - CGO_ENABLED=0
-    - GO111MODULE=on
-  ldflags:
-    - -s -w
-    - "-X main.version={{.Version}}"
-    - "-X main.commit={{.Commit}}"
-checksum:
-  name_template: '{{ .ProjectName }}_{{ .Version }}_checksums.txt'
-archives:
-  - format: zip
+  - main: ./main.go
+    binary: athena-query-executor
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - "386"
+      - arm
+      - arm64
+    goarm:
+      - 7
+    ldflags:
+      - -s -w
+      - "-X main.version={{.Version}}"
+      - "-X main.commit={{.Commit}}"
 snapshot:
   name_template: master
+archives:
+  - format: zip
+    name_template: '{{ .Binary }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}'
+    files:
+      - LICENSE*
+      - README*
+nfpms:
+  - file_name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    replacements:
+      amd64: 64-bit
+      386: 32-bit
+      arm: ARM
+      arm64: ARM64
+      darwin: macOS
+      linux: Tux
+    vendor: yutachaos
+    homepage: https://github.com/yutachaos/athena-query-executor
+    maintainer: Yuta Kimura <bumplive@gmail.com>
+    license: MIT
+    formats:
+      - deb
+      - rpm
+checksum:
+  name_template: '{{ .ProjectName }}_{{ .Version }}_checksums.txt'
 changelog:
   sort: asc
   filters:
